@@ -133,7 +133,7 @@ export default class RejectPartyOwnerLcuPlugin extends LcuPlugin {
         this.log('Someone else was made party leader: ', this.lastPartyLeader.gameName);
         return;
       }
-      if (typeof this.lastPartyLeader === 'undefined') {
+      if (typeof this.lastPartyLeader === 'undefined' || this.lastPartyLeader.summonerId === currentSummonerId) {
         this.log('I was always party leaders, thus ignoring');
         return;
       }
