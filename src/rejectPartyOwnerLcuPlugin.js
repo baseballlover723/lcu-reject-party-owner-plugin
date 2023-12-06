@@ -17,6 +17,11 @@ const LOBBY_EVENT = 'OnJsonApiEvent_lol-lobby_v2_comms';
 // TODO on repeated lobby promotions to me, eventually do random leader
 
 export default class RejectPartyOwnerLcuPlugin extends LcuPlugin {
+  constructor(startEnabled = true) {
+    super();
+    this.startEnabled = startEnabled;
+  }
+
   onConnect(clientData) {
     axios.defaults.baseURL = `${clientData.protocol}://${clientData.address}:${clientData.port}`;
     axios.defaults.auth = { username: clientData.username, password: clientData.password };
@@ -25,7 +30,7 @@ export default class RejectPartyOwnerLcuPlugin extends LcuPlugin {
         reject(error);
       }).then((summonerId) => {
         this.getCurrentLobbyLeader().then((lastPartyLeader) => {
-          this.enabled = true;
+          this.enabled = this.startEnabled;
           this.lastPartyLeader = lastPartyLeader;
           this.subscribeEvent(CONVERSATIONS_EVENT, this.handleLobbyChat(summonerId));
           this.subscribeEvent(LOBBY_EVENT, this.handleLobbyMemberChange(summonerId));
@@ -111,6 +116,25 @@ export default class RejectPartyOwnerLcuPlugin extends LcuPlugin {
       } else if (/disable party (leader|owner)/i.test(event.data.body)) {
         this.enabled = true;
         this.log('enabling plugin');
+
+        const players = await this.getLobbyMembers();
+        if (players.data.length > 1 && this.amLeader(currentSummonerId, players)) {
+          this.log('I am currently party leader');
+          if (typeof this.lastPartyLeader === 'undefined' || this.lastPartyLeader.summonerId === currentSummonerId) {
+            this.lastPartyLeader = this.convertLobbyMemberToComms(this.chooseRandomPlayer(players, currentSummonerId));
+            this.log(`Don't remember the last party leader, so randomly selected ${this.lastPartyLeader.gameName} instead`);
+          } else {
+            this.log(`I still remember the last party leader (${this.lastPartyLeader.gameName})`);
+          }
+
+          const { lastPartyLeader } = this;
+          await this.promote(lastPartyLeader.summonerId);
+          const chatUrl = event.uri.substring(0, event.uri.lastIndexOf('/'));
+          await this.sendMessage(chatUrl, `I do not wish to be party leader anymore so I'm promoting ${lastPartyLeader.gameName} to party leader`);
+        } else {
+          this.log('Ignoring since I am not party leader anymore');
+          this.lastPartyLeader = await this.getCurrentLobbyLeader();
+        }
       }
     };
   }
@@ -155,7 +179,7 @@ export default class RejectPartyOwnerLcuPlugin extends LcuPlugin {
 
       if (!this.playerExists(players, lastPartyLeader.summonerId)) {
         const oldLastPartyLeader = this.lastPartyLeader;
-        this.lastPartyLeader = this.chooseRandomPlayer(players, currentSummonerId);
+        this.lastPartyLeader = this.convertLobbyMemberToComms(this.chooseRandomPlayer(players, currentSummonerId));
         lastPartyLeader = this.lastPartyLeader;
         this.log(`player ${oldLastPartyLeader.gameName} isn't in the party anymore, selecting ${lastPartyLeader.gameName} instead`);
       }

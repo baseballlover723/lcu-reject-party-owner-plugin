@@ -1,6 +1,6 @@
 {
   "name": "lcu-reject-party-owner-plugin",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "A Plugin for the League of Legends Client that automatically makes someone else the party leader.",
   "type": "module",
   "repository": {
