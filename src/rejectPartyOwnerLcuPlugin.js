@@ -5,7 +5,7 @@ const CURRENT_SUMMONER_ENDPOINT = 'lol-summoner/v1/current-summoner';
 const MEMBERS_ENDPOINT = 'lol-lobby/v2/lobby/members';
 const CHAT_ENDPOINTS = {
   base: '/lol-chat/v1/conversations',
-  suffix: '%40sec.na1.pvp.net/messages',
+  suffix: '%40lol-pre-game.na1.pvp.net/messages',
 };
 const PROMOTE_ENDPOINTS = {
   base: 'lol-lobby/v2/lobby/members',
